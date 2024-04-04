@@ -112,7 +112,7 @@ if __name__ == "__main__":
     t_next = jnp.tile(raw['t'][1:], (num_traj, 1))
     x = jnp.concatenate((raw['q'][:, :-1], raw['dq'][:, :-1]), axis=-1)
     x_next = jnp.concatenate((raw['q'][:, 1:], raw['dq'][:, 1:]), axis=-1)
-    u = raw['u'][:, :-1]
+    u = raw['u'][:, :-1, :3]
     data = {'t': t, 'x': x, 'u': u, 't_next': t_next, 'x_next': x_next}
 
     # Shuffle and sub-sample trajectories

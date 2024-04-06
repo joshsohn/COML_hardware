@@ -45,7 +45,7 @@ from jax.example_libraries import optimizers             # noqa: E402
 from dynamics import prior                          # noqa: E402
 from utils import (tree_normsq, rk38_step, epoch,   # noqa: E402
                    odeint_fixed_step, random_ragged_spline, spline,
-            params_to_cholesky, params_to_posdef)
+            params_to_cholesky, params_to_posdef, quaternion_to_rotation_matrix)
 
 import jax.debug as jdebug
 
@@ -90,8 +90,8 @@ hparams = {
         'num_knots':         6,          # knot points per reference spline
         'poly_orders':       (9, 9, 9),  # spline orders for each DOF
         'deriv_orders':      (4, 4, 4),  # smoothness objective for each DOF
-        'min_step':          (-2., -2., 0),    #
-        'max_step':          (2., 2., 2),       #
+        'min_step':          (-2., -2., -0.75),    #
+        'max_step':          (2., 2., 0.75),       #
         'min_ref':           (-inf, -inf, -inf),  #
         'max_ref':           (inf, inf, inf),     #
         'p_freq':            args.p_freq,          # frequency for p-norm update
@@ -103,9 +103,10 @@ if __name__ == "__main__":
     # DATA PROCESSING ########################################################
     # Load raw data and arrange in samples of the form
     # `(t, x, u, t_next, x_next)` for each trajectory, where `x := (q,dq)`
-    with open('2024-03-09_18-10-29_traj50_seed0.pkl', 'rb') as file:
+    with open('data/2024-04-04_23-51-17_traj50_seed0.pkl', 'rb') as file:
         raw = pickle.load(file)
     num_dof = raw['q'].shape[-1]       # number of degrees of freedom
+    param_dim = 2*num_dof + 9 + 3    # number of degrees of freedom including attitude (9 for rotation matrix, 3 for angular velocity)
     num_traj = raw['q'].shape[0]       # total number of raw trajectories
     num_samples = raw['t'].size - 1    # number of transitions per trajectory
     t = jnp.tile(raw['t'][:-1], (num_traj, 1))
@@ -113,7 +114,11 @@ if __name__ == "__main__":
     x = jnp.concatenate((raw['q'][:, :-1], raw['dq'][:, :-1]), axis=-1)
     x_next = jnp.concatenate((raw['q'][:, 1:], raw['dq'][:, 1:]), axis=-1)
     u = raw['u'][:, :-1, :3]
-    data = {'t': t, 'x': x, 'u': u, 't_next': t_next, 'x_next': x_next}
+    quat = raw['quat'][:, :-1]
+    R = jax.vmap(jax.vmap(quaternion_to_rotation_matrix, in_axes=0), in_axes=0)(quat)
+    R_reshape = R.reshape(R.shape[0], R.shape[1], -1)
+    omega = raw['omega'][:, :-1]
+    data = {'t': t, 'x': x, 'u': u, 'R_reshape': R_reshape, 'omega': omega, 't_next': t_next, 'x_next': x_next}
 
     # Shuffle and sub-sample trajectories
     if hparams['num_subtraj'] > num_traj:
@@ -132,7 +137,7 @@ if __name__ == "__main__":
 
     # MODEL ENSEMBLE TRAINING ################################################
     # Loss function along a trajectory
-    def ode(x, t, u, params, prior=prior):
+    def ode(x, R_reshape, omega, t, u, params, prior=prior):
         """TODO: docstring."""
         num_dof = x.size // 2
         q, dq = x[:num_dof], x[num_dof:]
@@ -140,22 +145,21 @@ if __name__ == "__main__":
 
         # Each model in the ensemble is a feed-forward neural network
         # with zero output bias
-        f = x
+        f_ext = x
+        f_ext = jnp.concatenate([f_ext, R_reshape, omega], axis=0)
         for W, b in zip(params['W'], params['b']):
-            f = jnp.tanh(W@f + b)
-        f = params['A'] @ f
-        print('B:', B)
-        print('u:', u)
-        ddq = jax.scipy.linalg.solve(H, B@u + f - C@dq - g, assume_a='pos')
+            f_ext = jnp.tanh(W@f_ext + b)
+        f_ext = params['A'] @ f_ext
+        ddq = jax.scipy.linalg.solve(H, B@u + f_ext - C@dq - g, assume_a='pos')
         dx = jnp.concatenate((dq, ddq))
         return dx
 
-    def loss(params, regularizer, t, x, u, t_next, x_next, ode=ode):
+    def loss(params, regularizer, t, x, R_reshape, omega, u, t_next, x_next, ode=ode):
         """TODO: docstring."""
         num_samples = t.size
         dt = t_next - t
-        x_next_est = jax.vmap(rk38_step, (None, 0, 0, 0, 0, None))(
-            ode, dt, x, t, u, params
+        x_next_est = jax.vmap(rk38_step, (None, 0, 0, 0, 0, 0, 0, None))(
+            ode, dt, x, R_reshape, omega, t, u, params
         )
         loss = (jnp.sum((x_next_est - x_next)**2)
                 + regularizer*tree_normsq(params)) / num_samples
@@ -190,7 +194,7 @@ if __name__ == "__main__":
     num_hlayers = hparams['ensemble']['num_hlayers']
     hdim = hparams['ensemble']['hdim']
     if num_hlayers >= 1:
-        shapes = [(hdim, 2*num_dof), ] + (num_hlayers-1)*[(hdim, hdim), ]
+        shapes = [(hdim, param_dim), ] + (num_hlayers-1)*[(hdim, hdim), ]
     else:
         shapes = []
     key, *subkeys = jax.random.split(key, 1 + 2*num_hlayers + 1)
@@ -272,7 +276,7 @@ if __name__ == "__main__":
     # META-TRAINING ##########################################################
     def ode(z, t, meta_params, pnorm_param, params, reference, prior=prior):
         """TODO: docstring."""
-        x, pA, c = z
+        x, R, Omega, pA, c = z
         num_dof = x.size // 2
         q, dq = x[:num_dof], x[num_dof:]
         r = reference(t)
@@ -281,6 +285,7 @@ if __name__ == "__main__":
 
         # Regressor features
         y = x
+        y = jnp.concatenate([y, R, Omega], axis=0)
         for W, b in zip(meta_params['W'], meta_params['b']):
             y = jnp.tanh(W@y + b)
 
@@ -305,18 +310,27 @@ if __name__ == "__main__":
 
         # Controller and adaptation law
         H, C, g, B = prior(q, dq)
-        f_hat = A@y
-        τ = H@dv + C@v + g - f_hat - K@s
+        f_ext_hat = A@y
+        τ = H@dv + C@v + g - f_ext_hat - K@s
         u = jnp.linalg.solve(B, τ)
         # dA = jax.scipy.linalg.sqrtm(P) @ jnp.outer(s, y)
         dA = jnp.outer(s, y) @ P
 
+        f_d = jnp.linalg.norm(u)
+        b_3d = -u / jnp.linalg.norm(u)
+        b_1d = jnp.array([1, 0, 0])
+        cross = jnp.cross(b_3d, b_1d)
+        b_2d = cross / jnp.linalg.norm(cross)
+
+        R_d = jnp.column_stack((jnp.cross(b_2d, b_3d), b_2d, b_3d))
+
         # Apply control to "true" dynamics
-        f = x
+        f_ext = x
+        f_ext = jnp.concatenate([f_ext, R, Omega], axis=0)
         for W, b in zip(params['W'], params['b']):
-            f = jnp.tanh(W@f + b)
-        f = params['A'] @ f
-        ddq = jax.scipy.linalg.solve(H, τ + f - C@dq - g, assume_a='pos')
+            f_ext = jnp.tanh(W@f_ext + b)
+        f_ext = params['A'] @ f_ext
+        ddq = jax.scipy.linalg.solve(H, τ + f_ext - C@dq - g, assume_a='pos')
         dx = jnp.concatenate((dq, ddq))
 
         # Estimation loss
@@ -329,7 +343,7 @@ if __name__ == "__main__":
         dc = jnp.array([
             e@e + de@de,                # tracking loss
             u@u,                        # control loss
-            (f_hat - f)@(f_hat - f),    # estimation loss
+            (f_ext_hat - f_ext)@(f_ext_hat - f_ext),    # estimation loss
         ])
 
         # Assemble derivatives
@@ -363,7 +377,7 @@ if __name__ == "__main__":
     num_hlayers = hparams['meta']['num_hlayers']
     hdim = hparams['meta']['hdim']
     if num_hlayers >= 1:
-        shapes = [(hdim, 2*num_dof), ] + (num_hlayers-1)*[(hdim, hdim), ]
+        shapes = [(hdim, param_dim), ] + (num_hlayers-1)*[(hdim, hdim), ]
     else:
         shapes = []
     key, *subkeys = jax.random.split(key, 1 + 2*num_hlayers + 3)

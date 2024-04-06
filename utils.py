@@ -14,37 +14,37 @@ from functools import partial
 from jax.flatten_util import ravel_pytree
 import jax.debug as jdebug
 
-# def quaternion_to_rotation_matrix(Q):
-#     """
-#     Covert a quaternion into a full three-dimensional rotation matrix.
-#     """
-#     # Extract the values from Q
-#     q_w = Q[0]
-#     q_x = Q[1]
-#     q_y = Q[2]
-#     q_z = Q[3]
+def quaternion_to_rotation_matrix(Q):
+    """
+    Covert a quaternion into a full three-dimensional rotation matrix.
+    """
+    # Extract the values from Q
+    q_w = Q[0]
+    q_x = Q[1]
+    q_y = Q[2]
+    q_z = Q[3]
      
-#     # First row of the rotation matrix
-#     r00 = 2 * (q_w * q_w + q_x * q_x) - 1
-#     r01 = 2 * (q_x * q_y - q_w * q_z)
-#     r02 = 2 * (q_x * q_z + q_w * q_y)
+    # First row of the rotation matrix
+    r00 = 2 * (q_w * q_w + q_x * q_x) - 1
+    r01 = 2 * (q_x * q_y - q_w * q_z)
+    r02 = 2 * (q_x * q_z + q_w * q_y)
      
-#     # Second row of the rotation matrix
-#     r10 = 2 * (q_x * q_y + q_w * q_z)
-#     r11 = 2 * (q_w * q_w + q_y * q_y) - 1
-#     r12 = 2 * (q_y * q_z - q_w * q_x)
+    # Second row of the rotation matrix
+    r10 = 2 * (q_x * q_y + q_w * q_z)
+    r11 = 2 * (q_w * q_w + q_y * q_y) - 1
+    r12 = 2 * (q_y * q_z - q_w * q_x)
      
-#     # Third row of the rotation matrix
-#     r20 = 2 * (q_x * q_z - q_w * q_y)
-#     r21 = 2 * (q_y * q_z + q_w * q_x)
-#     r22 = 2 * (q_w * q_w + q_z * q_z) - 1
+    # Third row of the rotation matrix
+    r20 = 2 * (q_x * q_z - q_w * q_y)
+    r21 = 2 * (q_y * q_z + q_w * q_x)
+    r22 = 2 * (q_w * q_w + q_z * q_z) - 1
      
-#     # 3x3 rotation matrix
-#     rot_matrix = jnp.array([[r00, r01, r02],
-#                            [r10, r11, r12],
-#                            [r20, r21, r22]])
+    # 3x3 rotation matrix
+    rot_matrix = jnp.array([[r00, r01, r02],
+                           [r10, r11, r12],
+                           [r20, r21, r22]])
                             
-#     return rot_matrix
+    return rot_matrix
 
 def mat_to_svec_dim(n):
     """Compute the number of unique entries in a symmetric matrix."""

@@ -10,5 +10,9 @@ if __name__ == "__main__":
     b_2d = cross / jnp.linalg.norm(cross)
 
     R_d = jnp.column_stack((jnp.cross(b_2d, b_3d), b_2d, b_3d))
+    
+    print(R_d)
 
-    print(-f_d*R_d@jnp.array([0, 0, 1]))
+    print(R_d.flatten())
+
+    # print(-f_d*R_d@jnp.array([0, 0, 1]))

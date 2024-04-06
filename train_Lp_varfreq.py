@@ -45,7 +45,8 @@ from jax.example_libraries import optimizers             # noqa: E402
 from dynamics import prior                          # noqa: E402
 from utils import (tree_normsq, rk38_step, epoch,   # noqa: E402
                    odeint_fixed_step, random_ragged_spline, spline,
-            params_to_cholesky, params_to_posdef, quaternion_to_rotation_matrix)
+            params_to_cholesky, params_to_posdef, 
+            quaternion_to_rotation_matrix, hat)
 
 import jax.debug as jdebug
 
@@ -116,9 +117,9 @@ if __name__ == "__main__":
     u = raw['u'][:, :-1, :3]
     quat = raw['quat'][:, :-1]
     R = jax.vmap(jax.vmap(quaternion_to_rotation_matrix, in_axes=0), in_axes=0)(quat)
-    R_reshape = R.reshape(R.shape[0], R.shape[1], -1)
+    R_flatten = R.reshape(R.shape[0], R.shape[1], -1)
     omega = raw['omega'][:, :-1]
-    data = {'t': t, 'x': x, 'u': u, 'R_reshape': R_reshape, 'omega': omega, 't_next': t_next, 'x_next': x_next}
+    data = {'t': t, 'x': x, 'u': u, 'R_flatten': R_flatten, 'omega': omega, 't_next': t_next, 'x_next': x_next}
 
     # Shuffle and sub-sample trajectories
     if hparams['num_subtraj'] > num_traj:
@@ -137,7 +138,7 @@ if __name__ == "__main__":
 
     # MODEL ENSEMBLE TRAINING ################################################
     # Loss function along a trajectory
-    def ode(x, R_reshape, omega, t, u, params, prior=prior):
+    def ode(x, R_flatten, omega, t, u, params, prior=prior):
         """TODO: docstring."""
         num_dof = x.size // 2
         q, dq = x[:num_dof], x[num_dof:]
@@ -146,7 +147,7 @@ if __name__ == "__main__":
         # Each model in the ensemble is a feed-forward neural network
         # with zero output bias
         f_ext = x
-        f_ext = jnp.concatenate([f_ext, R_reshape, omega], axis=0)
+        f_ext = jnp.concatenate([f_ext, R_flatten, omega], axis=0)
         for W, b in zip(params['W'], params['b']):
             f_ext = jnp.tanh(W@f_ext + b)
         f_ext = params['A'] @ f_ext
@@ -154,12 +155,12 @@ if __name__ == "__main__":
         dx = jnp.concatenate((dq, ddq))
         return dx
 
-    def loss(params, regularizer, t, x, R_reshape, omega, u, t_next, x_next, ode=ode):
+    def loss(params, regularizer, t, x, R_flatten, omega, u, t_next, x_next, ode=ode):
         """TODO: docstring."""
         num_samples = t.size
         dt = t_next - t
         x_next_est = jax.vmap(rk38_step, (None, 0, 0, 0, 0, 0, 0, None))(
-            ode, dt, x, R_reshape, omega, t, u, params
+            ode, dt, x, R_flatten, omega, t, u, params
         )
         loss = (jnp.sum((x_next_est - x_next)**2)
                 + regularizer*tree_normsq(params)) / num_samples
@@ -276,7 +277,7 @@ if __name__ == "__main__":
     # META-TRAINING ##########################################################
     def ode(z, t, meta_params, pnorm_param, params, reference, prior=prior):
         """TODO: docstring."""
-        x, R, Omega, pA, c = z
+        x, R_flatten, Omega, pA, c = z
         num_dof = x.size // 2
         q, dq = x[:num_dof], x[num_dof:]
         r = reference(t)
@@ -285,7 +286,7 @@ if __name__ == "__main__":
 
         # Regressor features
         y = x
-        y = jnp.concatenate([y, R, Omega], axis=0)
+        y = jnp.concatenate([y, R_flatten, Omega], axis=0)
         for W, b in zip(meta_params['W'], meta_params['b']):
             y = jnp.tanh(W@y + b)
 
@@ -324,9 +325,18 @@ if __name__ == "__main__":
 
         R_d = jnp.column_stack((jnp.cross(b_2d, b_3d), b_2d, b_3d))
 
+        M = ...
+
+        J = jnp.diag(jnp.array([0.03, 0.03, 0.09]))
+
+        dOmega = jax.scipy.linalg.solve(J, M - jnp.cross(Omega, J@Omega), assume_a='pos')
+        R = R_flatten.reshape((3,3))
+        dR = R@hat(Omega)
+        dR_flatten = dR.flatten()
+
         # Apply control to "true" dynamics
         f_ext = x
-        f_ext = jnp.concatenate([f_ext, R, Omega], axis=0)
+        f_ext = jnp.concatenate([f_ext, R_flatten, Omega], axis=0)
         for W, b in zip(params['W'], params['b']):
             f_ext = jnp.tanh(W@f_ext + b)
         f_ext = params['A'] @ f_ext
@@ -347,7 +357,7 @@ if __name__ == "__main__":
         ])
 
         # Assemble derivatives
-        dz = (dx, dA, dc)
+        dz = (dx, dR_flatten, dOmega, dA, dc)
         return dz
 
     # Simulate adaptive control loop on each model in the ensemble
@@ -359,9 +369,11 @@ if __name__ == "__main__":
         num_dof = r0.size
         num_features = meta_params['W'][-1].shape[0]
         x0 = jnp.concatenate((r0, dr0))
+        R_flatten0 = jnp.zeros(9)
+        Omega0 = jnp.zeros(3)
         A0 = jnp.zeros((num_dof, num_features))
         c0 = jnp.zeros(3)
-        z0 = (x0, A0, c0)
+        z0 = (x0, R_flatten0, Omega0, A0, c0)
 
         # Integrate the adaptive control loop using the meta-model
         # and EACH model in the ensemble along the same reference
@@ -370,8 +382,8 @@ if __name__ == "__main__":
         z, t = jax.vmap(odeint_fixed_step, in_axes)(ode, z0, 0., T, dt,
                                                     meta_params, pnorm_param,
                                                     ensemble_params)
-        x, A, c = z
-        return t, x, A, c
+        x, R_flatten, Omega, A, c = z
+        return t, x, R_flatten, Omega, A, c
 
     # Initialize meta-model parameters
     num_hlayers = hparams['meta']['num_hlayers']
@@ -440,16 +452,16 @@ if __name__ == "__main__":
             r = jnp.array([spline(t, t_knots, c) for c in coefs])
             r = jnp.clip(r, min_ref, max_ref)
             return r
-        t, x, A, c = ensemble_sim(meta_params, pnorm_param, ensemble_params,
+        t, x, R_flatten, Omega, A, c = ensemble_sim(meta_params, pnorm_param, ensemble_params,
                                   reference, T, dt)
-        return t, x, A, c
+        return t, x, R_flatten, Omega, A, c
 
     @partial(jax.jit, static_argnums=(5, 6))
     def loss(meta_params, pnorm_param, ensemble_params, t_knots, coefs, T, dt,
              regularizer_l2, regularizer_ctrl, regularizer_error, regularizer_P):
         """TODO: docstring."""
         # Simulate on each model for each reference trajectory
-        t, x, A, c = simulate(meta_params, pnorm_param, ensemble_params, t_knots,
+        t, x, R_flatten, Omega, A, c = simulate(meta_params, pnorm_param, ensemble_params, t_knots,
                               coefs, T, dt)
 
         # Sum final costs over reference trajectories and ensemble models

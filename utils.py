@@ -46,11 +46,18 @@ def quaternion_to_rotation_matrix(Q):
                             
     return rot_matrix
 
+
 def hat(in_vec):
-    out_mat = np.array([[0, -in_vec[2], in_vec[1]],
+    out_mat = jnp.array([[0, -in_vec[2], in_vec[1]],
                         [in_vec[2], 0, -in_vec[0]],
                         [-in_vec[1], in_vec[0], 0]])
     return out_mat
+
+
+def vee(in_mat):
+    out_vec = jnp.array([in_mat[2, 1], in_mat[0, 2], in_mat[1, 0]])
+    return out_vec
+
 
 def mat_to_svec_dim(n):
     """Compute the number of unique entries in a symmetric matrix."""

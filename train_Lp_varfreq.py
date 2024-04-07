@@ -313,12 +313,12 @@ if __name__ == "__main__":
         H, C, g, B = prior(q, dq)
         f_ext_hat = A@y
         τ = H@dv + C@v + g - f_ext_hat - K@s
-        u = jnp.linalg.solve(B, τ)
+        u_d = jnp.linalg.solve(B, τ)
         # dA = jax.scipy.linalg.sqrtm(P) @ jnp.outer(s, y)
         dA = jnp.outer(s, y) @ P
 
-        f_d = jnp.linalg.norm(u)
-        b_3d = -u / jnp.linalg.norm(u)
+        f_d = jnp.linalg.norm(u_d)
+        b_3d = -u_d / jnp.linalg.norm(u_d)
         b_1d = jnp.array([1, 0, 0])
         cross = jnp.cross(b_3d, b_1d)
         b_2d = cross / jnp.linalg.norm(cross)
@@ -334,13 +334,16 @@ if __name__ == "__main__":
         dR = R@hat(Omega)
         dR_flatten = dR.flatten()
 
+        e_3 = jnp.array([[0], [0], [1]])
+        u = -f_d*R@e_3
+
         # Apply control to "true" dynamics
         f_ext = x
         f_ext = jnp.concatenate([f_ext, R_flatten, Omega], axis=0)
         for W, b in zip(params['W'], params['b']):
             f_ext = jnp.tanh(W@f_ext + b)
         f_ext = params['A'] @ f_ext
-        ddq = jax.scipy.linalg.solve(H, τ + f_ext - C@dq - g, assume_a='pos')
+        ddq = jax.scipy.linalg.solve(H, u + f_ext - C@dq - g, assume_a='pos')
         dx = jnp.concatenate((dq, ddq))
 
         # Estimation loss
@@ -352,7 +355,7 @@ if __name__ == "__main__":
         # Integrated cost terms
         dc = jnp.array([
             e@e + de@de,                # tracking loss
-            u@u,                        # control loss
+            u_d@u_d,                        # control loss
             (f_ext_hat - f_ext)@(f_ext_hat - f_ext),    # estimation loss
         ])
 

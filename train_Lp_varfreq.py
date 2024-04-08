@@ -46,7 +46,7 @@ from dynamics import prior                          # noqa: E402
 from utils import (tree_normsq, rk38_step, epoch,   # noqa: E402
                    odeint_fixed_step, random_ragged_spline, spline,
             params_to_cholesky, params_to_posdef, 
-            quaternion_to_rotation_matrix, hat)
+            quaternion_to_rotation_matrix, hat, vee)
 
 import jax.debug as jdebug
 
@@ -275,9 +275,25 @@ if __name__ == "__main__":
                                  best_idx, step_idx)
 
     # META-TRAINING ##########################################################
+    k_R = jnp.array([1400.0, 1400.0, 1260.0])/1000.0
+    k_Omega = jnp.array([330.0, 330.0, 300.0])/1000.0
+    J = jnp.diag(jnp.array([0.03, 0.03, 0.09]))
+
     def ode(z, t, meta_params, pnorm_param, params, reference, prior=prior):
         """TODO: docstring."""
         x, R_flatten, Omega, pA, c = z
+
+        if jnp.any(jnp.isnan(x)):
+            jdebug.print('x: {}', x)
+        if jnp.any(jnp.isnan(R_flatten)):
+            jdebug.print('R_flatten: {}', R_flatten)
+        if jnp.any(jnp.isnan(Omega)):
+            jdebug.print('Omega: {}', Omega)
+        if jnp.any(jnp.isnan(pA)):
+            jdebug.print('pA: {}', pA)
+        if jnp.any(jnp.isnan(c)):
+            jdebug.print('c: {}', c)
+
         num_dof = x.size // 2
         q, dq = x[:num_dof], x[num_dof:]
         r = reference(t)
@@ -317,6 +333,8 @@ if __name__ == "__main__":
         # dA = jax.scipy.linalg.sqrtm(P) @ jnp.outer(s, y)
         dA = jnp.outer(s, y) @ P
 
+        R = R_flatten.reshape((3,3))
+
         f_d = jnp.linalg.norm(u_d)
         b_3d = -u_d / jnp.linalg.norm(u_d)
         b_1d = jnp.array([1, 0, 0])
@@ -325,16 +343,22 @@ if __name__ == "__main__":
 
         R_d = jnp.column_stack((jnp.cross(b_2d, b_3d), b_2d, b_3d))
 
-        M = ...
+        Omega_d = jnp.array([0, 0, 0])
+        dOmega_d = jnp.array([0, 0, 0])
 
-        J = jnp.diag(jnp.array([0.03, 0.03, 0.09]))
+        e_R = 0.5 * vee(R_d.T@R - R.T@R_d)
+        e_Omega = Omega - R.T@R_d@Omega_d
+
+        M = - k_R*e_R \
+            - k_Omega*e_Omega \
+            + jnp.cross(Omega, J@Omega) \
+            - J@(hat(Omega)@R.T@R_d@Omega_d - R.T@R_d@dOmega_d)
 
         dOmega = jax.scipy.linalg.solve(J, M - jnp.cross(Omega, J@Omega), assume_a='pos')
-        R = R_flatten.reshape((3,3))
         dR = R@hat(Omega)
         dR_flatten = dR.flatten()
 
-        e_3 = jnp.array([[0], [0], [1]])
+        e_3 = jnp.array([0, 0, 1])
         u = -f_d*R@e_3
 
         # Apply control to "true" dynamics

@@ -33,12 +33,15 @@ if __name__ == "__main__":
     Omega_d = jnp.array([0, 0, 0])
     dOmega_d = jnp.array([0, 0, 0])
 
-    k_R = jnp.array([1400.0, 1400.0, 1260.0])
-    k_Omega = jnp.array([330.0, 330.0, 300.0])
+    k_R = jnp.array([1400.0, 1400.0, 1260.0])/1000.0
+    k_Omega = jnp.array([330.0, 330.0, 300.0])/1000.0
     J = jnp.diag(jnp.array([0.03, 0.03, 0.09]))
 
     e_R = 0.5 * vee(R_d.T@R - R.T@R_d)
     e_Omega = Omega - R.T@R_d@Omega_d
+
+    print('e_R:', e_R)
+    print('e_Omega:', e_Omega)
 
     M = - k_R*e_R \
         - k_Omega*e_Omega \
@@ -51,3 +54,6 @@ if __name__ == "__main__":
 
     e_3 = jnp.array([0, 0, 1])
     u = -f_d*R@e_3
+
+    print(dOmega)
+    print(dR)

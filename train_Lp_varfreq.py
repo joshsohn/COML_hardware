@@ -283,17 +283,6 @@ if __name__ == "__main__":
         """TODO: docstring."""
         x, R_flatten, Omega, pA, c = z
 
-        if jnp.any(jnp.isnan(x)):
-            jdebug.print('x: {}', x)
-        if jnp.any(jnp.isnan(R_flatten)):
-            jdebug.print('R_flatten: {}', R_flatten)
-        if jnp.any(jnp.isnan(Omega)):
-            jdebug.print('Omega: {}', Omega)
-        if jnp.any(jnp.isnan(pA)):
-            jdebug.print('pA: {}', pA)
-        if jnp.any(jnp.isnan(c)):
-            jdebug.print('c: {}', c)
-
         num_dof = x.size // 2
         q, dq = x[:num_dof], x[num_dof:]
         r = reference(t)

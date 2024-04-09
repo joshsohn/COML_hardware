@@ -384,7 +384,13 @@ if __name__ == "__main__":
         num_dof = r0.size
         num_features = meta_params['W'][-1].shape[0]
         x0 = jnp.concatenate((r0, dr0))
-        R_flatten0 = jnp.zeros(9)
+        # R_flatten0 = jnp.zeros(9)
+        R0 = jnp.array(
+            [[ 1.,  0.,  0.],
+            [ 0., -1.,  0.],
+            [ 0.,  0., -1.]]
+        )
+        R_flatten0 = R0.flatten()
         Omega0 = jnp.zeros(3)
         A0 = jnp.zeros((num_dof, num_features))
         c0 = jnp.zeros(3)

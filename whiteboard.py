@@ -23,12 +23,15 @@ if __name__ == "__main__":
     R = R_flatten.reshape((3,3))
 
     f_d = jnp.linalg.norm(u_d)
+    u_d = jnp.array([0, 0, 1])
     b_3d = -u_d / jnp.linalg.norm(u_d)
     b_1d = jnp.array([1, 0, 0])
     cross = jnp.cross(b_3d, b_1d)
     b_2d = cross / jnp.linalg.norm(cross)
 
     R_d = jnp.column_stack((jnp.cross(b_2d, b_3d), b_2d, b_3d))
+
+    print(R_d)
 
     Omega_d = jnp.array([0, 0, 0])
     dOmega_d = jnp.array([0, 0, 0])

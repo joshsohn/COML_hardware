@@ -89,12 +89,12 @@ def disturbance(q, dq, w, β=β):
     f_ext = - jnp.array([*(R @ (β * v * jnp.abs(v))), 0.])
     return f_ext
 
-def ensemble_disturbance(q, dq, R_flatten, Omega, W, b, A):
-    f_ext = jnp.concatenate((q, dq, R_flatten, Omega), axis=0)
-    print(f_ext.shape)
-    print(W.shape)
-    for W, b in zip(W, b):
-        f_ext = jnp.tanh(W@f_ext + b)
-    f_ext = A @ f_ext
+# def ensemble_disturbance(q, dq, R_flatten, Omega, W, b, A):
+#     f_ext = jnp.concatenate((q, dq, R_flatten, Omega), axis=0)
+#     print(f_ext.shape)
+#     print(W.shape)
+#     for W, b in zip(W, b):
+#         f_ext = jnp.tanh(W@f_ext + b)
+#     f_ext = A @ f_ext
 
-    return f_ext
+#     return f_ext

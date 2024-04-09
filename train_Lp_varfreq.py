@@ -282,7 +282,6 @@ if __name__ == "__main__":
     def ode(z, t, meta_params, pnorm_param, params, reference, prior=prior):
         """TODO: docstring."""
         x, R_flatten, Omega, pA, c = z
-
         num_dof = x.size // 2
         q, dq = x[:num_dof], x[num_dof:]
         r = reference(t)

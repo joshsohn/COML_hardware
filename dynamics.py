@@ -22,7 +22,7 @@ def prior(q, dq, g_acc=g_acc):
     # sinϕ, cosϕ = jnp.sin(q[2]), jnp.cos(q[2])
     H = m*jnp.eye(nq)
     C = jnp.zeros((nq, nq))
-    g = m*jnp.array([0., 0., g_acc])
+    g = m*jnp.array([0., 0., -g_acc])
     # R = jnp.array([
     #     [cosϕ, -sinϕ, 0],
     #     [sinϕ,  cosϕ, 0],
@@ -89,12 +89,12 @@ def disturbance(q, dq, w, β=β):
     f_ext = - jnp.array([*(R @ (β * v * jnp.abs(v))), 0.])
     return f_ext
 
-# def ensemble_disturbance(q, dq, R_flatten, Omega, W, b, A):
-#     f_ext = jnp.concatenate((q, dq, R_flatten, Omega), axis=0)
-#     print(f_ext.shape)
-#     print(W.shape)
-#     for W, b in zip(W, b):
-#         f_ext = jnp.tanh(W@f_ext + b)
-#     f_ext = A @ f_ext
+def ensemble_disturbance(q, dq, R_flatten, Omega, W, b, A):
+    f_ext = jnp.concatenate((q, dq, R_flatten, Omega), axis=0)
+    print(f_ext.shape)
+    print(W.shape)
+    for W, b in zip(W, b):
+        f_ext = jnp.tanh(W@f_ext + b)
+    f_ext = A @ f_ext
 
-#     return f_ext
+    return f_ext

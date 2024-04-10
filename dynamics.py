@@ -44,38 +44,6 @@ def plant(q, dq, u, f_ext, prior=prior):
     return ddq
 
 
-k_R = jnp.array([1400.0, 1400.0, 1260.0])/1000.0
-k_Omega = jnp.array([330.0, 330.0, 300.0])/1000.0
-J = jnp.diag(jnp.array([0.03, 0.03, 0.09]))
-
-def plant_attitude(R_flatten, Omega, u):
-    R = R_flatten.reshape((3,3))
-
-    # f_d = jnp.linalg.norm(u)
-    b_3d = -u / jnp.linalg.norm(u)
-    b_1d = jnp.array([1, 0, 0])
-    cross = jnp.cross(b_3d, b_1d)
-    b_2d = cross / jnp.linalg.norm(cross)
-
-    R_d = jnp.column_stack((jnp.cross(b_2d, b_3d), b_2d, b_3d))
-
-    Omega_d = jnp.array([0, 0, 0])
-    dOmega_d = jnp.array([0, 0, 0])
-
-    e_R = 0.5 * vee(R_d.T@R - R.T@R_d)
-    e_Omega = Omega - R.T@R_d@Omega_d
-
-    M = - k_R*e_R \
-        - k_Omega*e_Omega \
-        + jnp.cross(Omega, J@Omega) \
-        - J@(hat(Omega)@R.T@R_d@Omega_d - R.T@R_d@dOmega_d)
-
-    dOmega = jax.scipy.linalg.solve(J, M - jnp.cross(Omega, J@Omega), assume_a='pos')
-    dR = R@hat(Omega)
-    dR_flatten = dR.flatten()
-
-    return (dR_flatten, dOmega)
-
 def disturbance(q, dq, w, β=β):
     """TODO: docstring."""
     β = jnp.asarray(β)
@@ -89,12 +57,3 @@ def disturbance(q, dq, w, β=β):
     f_ext = - jnp.array([*(R @ (β * v * jnp.abs(v))), 0.])
     return f_ext
 
-def ensemble_disturbance(q, dq, R_flatten, Omega, W, b, A):
-    f_ext = jnp.concatenate((q, dq, R_flatten, Omega), axis=0)
-    print(f_ext.shape)
-    print(W.shape)
-    for W, b in zip(W, b):
-        f_ext = jnp.tanh(W@f_ext + b)
-    f_ext = A @ f_ext
-
-    return f_ext

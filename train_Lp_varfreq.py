@@ -258,9 +258,12 @@ if __name__ == "__main__":
     end = time.time()
     print('done ({:.2f} s)!'.format(end - start))
 
+    ensemble_loss = []
     # Do gradient descent
     for _ in tqdm(range(hparams['ensemble']['num_epochs'])):
         key, subkey = jax.random.split(key, 2)
+        total_loss = 0
+        num_batches = 0
         for batch in epoch(subkey, ensemble_train_data, batch_size,
                            batch_axis=1, ragged=False):
             opt_states = step(step_idx, opt_states,
@@ -274,6 +277,13 @@ if __name__ == "__main__":
             step_idx += 1
             best_idx = jnp.where(old_losses == best_losses,
                                  best_idx, step_idx)
+            
+            total_loss += best_losses
+            num_batches += 1
+        epoch_avg_loss = total_loss / num_batches
+        ensemble_loss.append(epoch_avg_loss)
+    
+    print(ensemble_loss)
 
     # META-TRAINING ##########################################################
     k_R = jnp.array([1400.0, 1400.0, 1260.0])/1000.0
@@ -667,7 +677,8 @@ if __name__ == "__main__":
         'regP': hparams['meta']['regularizer_P'],
         'train_lossaux_history': train_lossaux_history,
         'valid_loss_history': valid_loss_history,
-        'pnorm_history': pnorm_history
+        'pnorm_history': pnorm_history,
+        'ensemble_loss': ensemble_loss
     }
     output_dir = os.path.join('train_results', args.output_dir)
     if not os.path.exists(output_dir):

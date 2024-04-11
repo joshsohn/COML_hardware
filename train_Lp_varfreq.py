@@ -33,6 +33,7 @@ parser.add_argument('--p_freq', help='set frequency for p-norm parameter update'
 parser.add_argument('--meta_epochs', help='set number of epochs for meta-training', type=int)
 parser.add_argument('--reg_P', help='set regularization for P matrix', type=float)
 parser.add_argument('--output_dir', help='set output directory', type=str)
+parser.add_argument('--hdim', help='number of hidden units per layer', type=int, default=32)
 args = parser.parse_args()
 
 # Set precision
@@ -68,7 +69,7 @@ hparams = {
     # For training the model ensemble
     'ensemble': {
         'num_hlayers':    2,     # number of hidden layers in each model
-        'hdim':           32,    # number of hidden units per layer
+        'hdim':           args.hdim,    # number of hidden units per layer
         'train_frac':     0.75,  # fraction of each trajectory for training
         'batch_frac':     0.25,  # fraction of training data per batch
         'regularizer_l2': 1e-4,  # coefficient for L2-regularization
@@ -78,7 +79,7 @@ hparams = {
     # For meta-training
     'meta': {
         'num_hlayers':       2,          # number of hidden layers
-        'hdim':              32,         # number of hidden units per layer
+        'hdim':              args.hdim,         # number of hidden units per layer
         'train_frac':        0.75,       #
         'learning_rate':     1e-2,       # step size for gradient optimization
         'num_steps':         args.meta_epochs,        # maximum number of gradient steps

@@ -263,7 +263,6 @@ if __name__ == "__main__":
     for _ in tqdm(range(hparams['ensemble']['num_epochs'])):
         key, subkey = jax.random.split(key, 2)
         total_loss = 0
-        num_batches = 0
         for batch in epoch(subkey, ensemble_train_data, batch_size,
                            batch_axis=1, ragged=False):
             opt_states = step(step_idx, opt_states,
@@ -278,13 +277,10 @@ if __name__ == "__main__":
             best_idx = jnp.where(old_losses == best_losses,
                                  best_idx, step_idx)
             
-            total_loss += best_losses
-            num_batches += 1
-        epoch_avg_loss = total_loss / num_batches
-        ensemble_loss.append(epoch_avg_loss)
+            total_loss += jnp.sum(best_losses)
+        epoch_avg_loss = total_loss / num_models
+        ensemble_loss.append(epoch_avg_loss.item())
     
-    print(ensemble_loss)
-
     # META-TRAINING ##########################################################
     k_R = jnp.array([1400.0, 1400.0, 1260.0])/1000.0
     k_Omega = jnp.array([330.0, 330.0, 300.0])/1000.0

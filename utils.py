@@ -14,9 +14,63 @@ from functools import partial
 from jax.flatten_util import ravel_pytree
 import jax.debug as jdebug
 
+def flat_rotation_matrix_to_quaternion(rot_mat_flat):
+    """Convert a rotation matrix to a quaternion. Quaternion is in w, x, y, z format."""
+    rot_mat = rot_mat_flat.reshape(3,3)
+    tr = rot_mat[0, 0] + rot_mat[1, 1] + rot_mat[2, 2]
+
+    def case1(_):
+        S = jnp.sqrt(tr + 1.0) * 2  # S=4*qw
+        qw = 0.25 * S
+        qx = (rot_mat[2, 1] - rot_mat[1, 2]) / S
+        qy = (rot_mat[0, 2] - rot_mat[2, 0]) / S
+        qz = (rot_mat[1, 0] - rot_mat[0, 1]) / S
+        return jnp.array([qw, qx, qy, qz])
+
+    def case2(_):
+        S = jnp.sqrt(1.0 + rot_mat[0, 0] - rot_mat[1, 1] - rot_mat[2, 2]) * 2
+        qw = (rot_mat[2, 1] - rot_mat[1, 2]) / S
+        qx = 0.25 * S
+        qy = (rot_mat[0, 1] + rot_mat[1, 0]) / S
+        qz = (rot_mat[0, 2] + rot_mat[2, 0]) / S
+        return jnp.array([qw, qx, qy, qz])
+
+    def case3(_):
+        S = jnp.sqrt(1.0 + rot_mat[1, 1] - rot_mat[0, 0] - rot_mat[2, 2]) * 2
+        qw = (rot_mat[0, 2] - rot_mat[2, 0]) / S
+        qx = (rot_mat[0, 1] + rot_mat[1, 0]) / S
+        qy = 0.25 * S
+        qz = (rot_mat[1, 2] + rot_mat[2, 1]) / S
+        return jnp.array([qw, qx, qy, qz])
+
+    def case4(_):
+        S = jnp.sqrt(1.0 + rot_mat[2, 2] - rot_mat[0, 0] - rot_mat[1, 1]) * 2
+        qw = (rot_mat[1, 0] - rot_mat[0, 1]) / S
+        qx = (rot_mat[0, 2] + rot_mat[2, 0]) / S
+        qy = (rot_mat[1, 2] + rot_mat[2, 1]) / S
+        qz = 0.25 * S
+        return jnp.array([qw, qx, qy, qz])
+
+    return jax.lax.cond(
+        tr > 0,
+        case1,
+        lambda _: jax.lax.cond(
+            rot_mat[0, 0] > rot_mat[1, 1],
+            case2,
+            lambda _: jax.lax.cond(
+                rot_mat[1, 1] > rot_mat[2, 2],
+                case3,
+                case4,
+                None
+            ),
+            None
+        ),
+        None
+    )
+
 def quaternion_to_rotation_matrix(Q):
     """
-    Covert a quaternion into a full three-dimensional rotation matrix.
+    Convert a quaternion into a full three-dimensional rotation matrix.
     """
     # Extract the values from Q
     q_w = Q[0]

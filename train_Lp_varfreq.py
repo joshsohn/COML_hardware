@@ -92,10 +92,10 @@ hparams = {
         'num_knots':         6,          # knot points per reference spline
         'poly_orders':       (9, 9, 9),  # spline orders for each DOF
         'deriv_orders':      (4, 4, 4),  # smoothness objective for each DOF
-        'min_step':          (-2., -2., -0.75),    #
-        'max_step':          (2., 2., 0.75),       #
-        'min_ref':           (-inf, -inf, -inf),  #
-        'max_ref':           (inf, inf, inf),     #
+        'min_step':          (-2., -2., -0.25),    #
+        'max_step':          (2., 2., 0.25),       #
+        'min_ref':           (-4.25, -3.5, 0.0),  #
+        'max_ref':           (4.5, 4.25, 2.0),     #
         'p_freq':            args.p_freq,          # frequency for p-norm update
         'regularizer_P':     args.reg_P,           # coefficient for P regularization
     },
@@ -463,8 +463,8 @@ if __name__ == "__main__":
         hparams['meta']['deriv_orders'],
         jnp.asarray(hparams['meta']['min_step']),
         jnp.asarray(hparams['meta']['max_step']),
-        0.7*min_ref,
-        0.7*max_ref,
+        0.7*min_ref + jnp.array([0, 0, -1]),
+        0.7*max_ref + jnp.array([0, 0, -1]),
     )
     # x_coefs, y_coefs, θ_coefs = coefs
     # x_knots, y_knots, θ_knots = knots
@@ -477,7 +477,7 @@ if __name__ == "__main__":
         """TODO: docstring."""
         # Define a reference trajectory in terms of spline coefficients
         def reference(t):
-            r = jnp.array([spline(t, t_knots, c) for c in coefs])
+            r = jnp.array([spline(t, t_knots, c) for c in coefs]) + jnp.array([0, 0, 1])
             r = jnp.clip(r, min_ref, max_ref)
             return r
         t, x, R_flatten, Omega, A, c = ensemble_sim(meta_params, pnorm_param, ensemble_params,

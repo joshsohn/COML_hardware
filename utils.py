@@ -244,18 +244,29 @@ def uniform_random_walk(key, num_steps, shape=(), min_step=0., max_step=1.):
     return points
 
 
-def random_spline(key, T_total, num_knots, poly_order, deriv_order,
-                  shape=(), min_step=0., max_step=1.):
-    """TODO: docstring."""
-    knots = uniform_random_walk(key, num_knots - 1, shape, min_step, max_step)
-    flat_knots = jnp.reshape(knots, (num_knots, -1))
-    diffs = jnp.linalg.norm(jnp.diff(flat_knots, axis=0), axis=1)
-    T = T_total * (diffs / jnp.sum(diffs))
-    t_knots = jnp.concatenate((jnp.array([0., ]),
-                               jnp.cumsum(T))).at[-1].set(T_total)
-    coefs = smooth_trajectory(knots, t_knots, poly_order, deriv_order)
-    return knots, t_knots, coefs
+# def random_spline(key, T_total, num_knots, poly_order, deriv_order,
+#                   shape=(), min_step=0., max_step=1.):
+#     """TODO: docstring."""
+#     knots = uniform_random_walk(key, num_knots - 1, shape, min_step, max_step)
+#     flat_knots = jnp.reshape(knots, (num_knots, -1))
+#     diffs = jnp.linalg.norm(jnp.diff(flat_knots, axis=0), axis=1)
+#     T = T_total * (diffs / jnp.sum(diffs))
+#     t_knots = jnp.concatenate((jnp.array([0., ]),
+#                                jnp.cumsum(T))).at[-1].set(T_total)
+#     coefs = smooth_trajectory(knots, t_knots, poly_order, deriv_order)
+#     return knots, t_knots, coefs
 
+def normalize_diffs_if_needed(normalized_diffs):
+    def true_fun(_):
+        return normalized_diffs / jnp.sum(normalized_diffs)
+    def false_fun(_):
+        return normalized_diffs
+    return jax.lax.cond(
+        jnp.sum(normalized_diffs) > 1,
+        true_fun,
+        false_fun,
+        operand=None
+    )
 
 def random_ragged_spline(key, T_total, num_knots, poly_orders, deriv_orders,
                          min_step, max_step, min_knot, max_knot):
@@ -269,7 +280,17 @@ def random_ragged_spline(key, T_total, num_knots, poly_orders, deriv_orders,
     knots = jnp.clip(knots, min_knot, max_knot)
     flat_knots = jnp.reshape(knots, (num_knots, -1))
     diffs = jnp.linalg.norm(jnp.diff(flat_knots, axis=0), axis=1)
-    T = T_total * (diffs / jnp.sum(diffs))
+    normalized_diffs = diffs / jnp.sum(diffs)
+
+    lower_bound = 0.1
+
+    # Ensure that each normalized time interval is above the lower bound
+    normalized_diffs = jnp.maximum(normalized_diffs, lower_bound)
+
+    # If the adjustment above made the total exceed 1, re-normalize the diffs
+    normalized_diffs = normalize_diffs_if_needed(normalized_diffs)
+
+    T = T_total * normalized_diffs
     t_knots = jnp.concatenate((jnp.array([0., ]),
                                jnp.cumsum(T))).at[-1].set(T_total)
     coefs = []

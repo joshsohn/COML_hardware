@@ -526,7 +526,10 @@ if __name__ == "__main__":
                 jnp.diag(params_to_cholesky(meta_params['gains']['K']))**2,
             'eigs_P':
                 jnp.diag(params_to_cholesky(meta_params['gains']['P']))**2,
-            'pnorm': pnorm_param['pnorm']
+            'pnorm': pnorm_param['pnorm'], 
+            'x': x,
+            'W': meta_params['W'],
+            'b': meta_params['b']
         }
         return loss, aux
 
@@ -612,12 +615,22 @@ if __name__ == "__main__":
     start = time.time()
 
     # Do gradient descent
+    output_dir = os.path.join('train_results', args.output_dir)
+    save_freq = 50
+
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
     for i in tqdm(range(hparams['meta']['num_steps'])):
         opt_meta, train_aux_meta, grads_meta = step_meta(
             step_meta_idx, opt_meta, pnorm_param, train_ensemble, train_t_knots, train_coefs,
             T, dt, regularizer_l2, regularizer_ctrl, regularizer_error, regularizer_P
         )
         # print(train_aux_meta)
+        if i%save_freq == 0:
+            output_path = os.path.join(output_dir, f'step_meta_epoch{i}.pkl')
+            with open(output_path, 'wb') as file:
+                pickle.dump(train_aux_meta, file)
+
         new_meta_params = get_params(opt_meta)
 
         # Update p-norm parameter

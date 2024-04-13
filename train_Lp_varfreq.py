@@ -102,6 +102,10 @@ hparams = {
 }
 
 if __name__ == "__main__":
+    # os.environ["XLA_PYTHON_CLIENT_PREALLOCATE"]="false"
+    # os.environ["XLA_PYTHON_CLIENT_MEM_FRACTION"]=".50"
+    # os.environ["XLA_PYTHON_CLIENT_ALLOCATOR"]="platform"
+
     # DATA PROCESSING ########################################################
     # Load raw data and arrange in samples of the form
     # `(t, x, u, t_next, x_next)` for each trajectory, where `x := (q,dq)`
@@ -528,8 +532,11 @@ if __name__ == "__main__":
                 jnp.diag(params_to_cholesky(meta_params['gains']['P']))**2,
             'pnorm': pnorm_param['pnorm'], 
             'x': x,
+            'A': A,
             'W': meta_params['W'],
-            'b': meta_params['b']
+            'b': meta_params['b'],
+            'R_flatten': R_flatten,
+            'Omega': Omega
         }
         return loss, aux
 
@@ -616,7 +623,7 @@ if __name__ == "__main__":
 
     # Do gradient descent
     output_dir = os.path.join('train_results', args.output_dir)
-    save_freq = 50
+    # save_freq = 50
 
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
@@ -626,10 +633,10 @@ if __name__ == "__main__":
             T, dt, regularizer_l2, regularizer_ctrl, regularizer_error, regularizer_P
         )
         # print(train_aux_meta)
-        if i%save_freq == 0:
-            output_path = os.path.join(output_dir, f'step_meta_epoch{i}.pkl')
-            with open(output_path, 'wb') as file:
-                pickle.dump(train_aux_meta, file)
+        # if i%save_freq == 0:
+        #     output_path = os.path.join(output_dir, f'step_meta_epoch{i}.pkl')
+        #     with open(output_path, 'wb') as file:
+        #         pickle.dump(train_aux_meta, file)
 
         new_meta_params = get_params(opt_meta)
 

@@ -536,7 +536,7 @@ if __name__ == "__main__":
             'W': meta_params['W'],
             'b': meta_params['b'],
             'R_flatten': R_flatten,
-            'Omega': Omega
+            'Omega': Omega,
         }
         return loss, aux
 
@@ -694,7 +694,11 @@ if __name__ == "__main__":
         'train_lossaux_history': train_lossaux_history,
         'valid_loss_history': valid_loss_history,
         'pnorm_history': pnorm_history,
-        'ensemble_loss': ensemble_loss
+        'ensemble_loss': ensemble_loss,
+        't_knots': t_knots,
+        'coefs': coefs,
+        'min_ref': min_ref,
+        'max_ref': max_ref
     }
     output_dir = os.path.join('train_results', args.output_dir)
     if not os.path.exists(output_dir):

@@ -286,7 +286,8 @@ if __name__ == "__main__":
         ensemble_loss.append(epoch_avg_loss.item())
     
     # META-TRAINING ##########################################################
-    k_R = jnp.array([1400.0, 1400.0, 1260.0])/1000.0
+    # k_R = jnp.array([1400.0, 1400.0, 1260.0])/1000.0
+    k_R = jnp.array([5.0, 5.0, 4.0])
     k_Omega = jnp.array([330.0, 330.0, 300.0])/1000.0
     J = jnp.diag(jnp.array([0.03, 0.03, 0.09]))
 
@@ -531,16 +532,10 @@ if __name__ == "__main__":
             'eigs_P':
                 jnp.diag(params_to_cholesky(meta_params['gains']['P']))**2,
             'pnorm': pnorm_param['pnorm'], 
-            'x': x,
-            'A': A,
+            'x': x[0, 0],
+            'A': A[0, 0],
             'W': meta_params['W'],
             'b': meta_params['b'],
-            'R_flatten': R_flatten,
-            'Omega': Omega,
-            't_knots': t_knots,
-            'coefs': coefs,
-            'min_ref': min_ref,
-            'max_ref': max_ref
         }
         return loss, aux
 
@@ -699,6 +694,10 @@ if __name__ == "__main__":
         'valid_loss_history': valid_loss_history,
         'pnorm_history': pnorm_history,
         'ensemble_loss': ensemble_loss,
+        't_knots': t_knots,
+        'coefs': coefs,
+        'min_ref': min_ref,
+        'max_ref': max_ref
     }
     output_dir = os.path.join('train_results', args.output_dir)
     if not os.path.exists(output_dir):

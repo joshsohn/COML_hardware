@@ -293,6 +293,8 @@ if __name__ == "__main__":
     k_Omega = jnp.array([0.330, 0.330, 0.300])
     J = jnp.diag(jnp.array([0.03, 0.03, 0.09]))
 
+    P = 1e-3*jnp.eye(32)
+
     def ode(z, t, meta_params, pnorm_param, params, reference, prior=prior):
         """TODO: docstring."""
         x, R_flatten, Omega, pA, c = z
@@ -313,7 +315,7 @@ if __name__ == "__main__":
             lambda x: params_to_posdef(x),
             meta_params['gains']
         )
-        Λ, K, P = gains['Λ'], gains['K'], gains['P']
+        Λ, K = gains['Λ'], gains['K']
 
         qn = 1.1 + pnorm_param['pnorm']**2
 
@@ -434,17 +436,17 @@ if __name__ == "__main__":
     meta_params = {
         # hidden layer weights
         'W': [0.1*jax.random.normal(subkeys_W[i], shapes[i])
-              for i in range(num_hlayers)],
+                for i in range(num_hlayers)],
         # hidden layer biases
         'b': [0.1*jax.random.normal(subkeys_b[i], (shapes[i][0],))
-              for i in range(num_hlayers)],
+                for i in range(num_hlayers)],
         'gains': {  # vectorized control and adaptation gains
             'Λ': 0.1*jax.random.normal(subkeys_gains[0],
-                                       ((num_dof*(num_dof + 1)) // 2,)),
+                                        ((num_dof*(num_dof + 1)) // 2,)),
             'K': 0.1*jax.random.normal(subkeys_gains[1],
-                                       ((num_dof*(num_dof + 1)) // 2,)),
-            'P': 1e-3*jax.random.normal(subkeys_gains[2],
-                                       ((hdim*(hdim + 1)) // 2,)),
+                                        ((num_dof*(num_dof + 1)) // 2,)),
+            # 'P': 1e-3*jax.random.normal(subkeys_gains[2],
+            #                             ((hdim*(hdim + 1)) // 2,)),
             # 'P': 0.1*jax.random.normal(subkeys_gains[2],
                                     #    ((num_dof*(num_dof + 1)) // 2,)),
         },
@@ -488,16 +490,16 @@ if __name__ == "__main__":
             r = jnp.clip(r, min_ref, max_ref)
             return r
         t, x, R_flatten, Omega, A, c = ensemble_sim(meta_params, pnorm_param, ensemble_params,
-                                  reference, T, dt)
+                                    reference, T, dt)
         return t, x, R_flatten, Omega, A, c
 
     @partial(jax.jit, static_argnums=(5, 6))
     def loss(meta_params, pnorm_param, ensemble_params, t_knots, coefs, T, dt,
-             regularizer_l2, regularizer_ctrl, regularizer_error, regularizer_P):
+                regularizer_l2, regularizer_ctrl, regularizer_error, regularizer_P):
         """TODO: docstring."""
         # Simulate on each model for each reference trajectory
         t, x, R_flatten, Omega, A, c = simulate(meta_params, pnorm_param, ensemble_params, t_knots,
-                              coefs, T, dt)
+                                coefs, T, dt)
 
         # Sum final costs over reference trajectories and ensemble models
         # Note `c` has shape (`num_refs`, `num_models`, `T // dt`, 3)
@@ -510,7 +512,8 @@ if __name__ == "__main__":
         num_models = c.shape[1]
         normalizer = T * num_refs * num_models
         tracking_loss, control_loss, estimation_loss = c_final
-        reg_P_penalty = jnp.linalg.norm(meta_params['gains']['P'])**2
+        # reg_P_penalty = jnp.linalg.norm(meta_params['gains']['P'])**2
+        reg_P_penalty = jnp.linalg.norm(P)**2
         l2_penalty = tree_normsq((meta_params['W'], meta_params['b']))
         # regularization on P Frobenius norm shouldn't be normalized
         loss = (tracking_loss
@@ -532,7 +535,8 @@ if __name__ == "__main__":
             'eigs_K':
                 jnp.diag(params_to_cholesky(meta_params['gains']['K']))**2,
             'eigs_P':
-                jnp.diag(params_to_cholesky(meta_params['gains']['P']))**2,
+                # jnp.diag(params_to_cholesky(meta_params['gains']['P']))**2,
+                jnp.linalg.eigvals(P),
             'pnorm': pnorm_param['pnorm'], 
             'x': x[0, 0],
             'A': A[0, 0],
@@ -556,10 +560,10 @@ if __name__ == "__main__":
     # Split reference trajectories into training and validation sets
     num_train_refs = int(train_frac * num_refs)
     train_t_knots = jax.tree_util.tree_map(lambda a: a[:num_train_refs],
-                                           t_knots)
+                                            t_knots)
     train_coefs = jax.tree_util.tree_map(lambda a: a[:num_train_refs], coefs)
     valid_t_knots = jax.tree_util.tree_map(lambda a: a[num_train_refs:],
-                                           t_knots)
+                                            t_knots)
     valid_coefs = jax.tree_util.tree_map(lambda a: a[num_train_refs:], coefs)
 
     # Initialize gradient-based optimizer (ADAM)
@@ -586,7 +590,7 @@ if __name__ == "__main__":
         )
         opt_state = update_opt(idx, grads, opt_state)
         return opt_state, aux, grads
-    
+
     @partial(jax.jit, static_argnums=(6, 7))
     def step_pnorm(idx, meta_params, opt_state, ensemble_params, t_knots, coefs, T, dt, regularizer_l2, regularizer_ctrl, regularizer_error, regularizer_P):
         """This function only updates the meta_params in an iteration"""

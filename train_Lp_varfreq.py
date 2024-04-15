@@ -443,7 +443,7 @@ if __name__ == "__main__":
                                        ((num_dof*(num_dof + 1)) // 2,)),
             'K': 0.1*jax.random.normal(subkeys_gains[1],
                                        ((num_dof*(num_dof + 1)) // 2,)),
-            'P': 0.1*jax.random.normal(subkeys_gains[2],
+            'P': 1e-3*jax.random.normal(subkeys_gains[2],
                                        ((hdim*(hdim + 1)) // 2,)),
             # 'P': 0.1*jax.random.normal(subkeys_gains[2],
                                     #    ((num_dof*(num_dof + 1)) // 2,)),

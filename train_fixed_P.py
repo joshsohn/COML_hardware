@@ -87,7 +87,7 @@ hparams = {
         'regularizer_ctrl':  1e-3,       #
         'regularizer_error': 0.,         #
         # 'T':                 5.,         # time horizon for each reference
-        'T':                 10.,         # time horizon for each reference
+        'T':                 20.,         # time horizon for each reference
         'dt':                1e-2,       # time step for numerical integration
         'num_refs':          10,         # reference trajectories to generate
         'num_knots':         6,          # knot points per reference spline

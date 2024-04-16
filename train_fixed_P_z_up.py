@@ -546,8 +546,9 @@ if __name__ == "__main__":
             'pnorm': pnorm_param['pnorm'], 
             'x': x[0, 0],
             'A': A[0, 0],
-            'W': meta_params['W'],
-            'b': meta_params['b'],
+            'R_flatten': R_flatten[0, 0]
+            # 'W': meta_params['W'],
+            # 'b': meta_params['b'],
         }
         return loss, aux
 

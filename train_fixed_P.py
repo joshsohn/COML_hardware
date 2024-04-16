@@ -536,7 +536,7 @@ if __name__ == "__main__":
                 jnp.diag(params_to_cholesky(meta_params['gains']['K']))**2,
             'eigs_P':
                 # jnp.diag(params_to_cholesky(meta_params['gains']['P']))**2,
-                jnp.linalg.eigvals(P),
+                jnp.linalg.eigh(P)[0],
             'pnorm': pnorm_param['pnorm'], 
             'x': x[0, 0],
             'A': A[0, 0],
@@ -638,6 +638,8 @@ if __name__ == "__main__":
             T, dt, regularizer_l2, regularizer_ctrl, regularizer_error, regularizer_P
         )
         # print(train_aux_meta)
+        print('reg_P_penalty: ', train_aux_meta['reg_P_penalty'])
+
         # if i%save_freq == 0:
         #     output_path = os.path.join(output_dir, f'step_meta_epoch{i}.pkl')
         #     with open(output_path, 'wb') as file:

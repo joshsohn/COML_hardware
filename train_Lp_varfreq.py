@@ -634,10 +634,6 @@ if __name__ == "__main__":
             T, dt, regularizer_l2, regularizer_ctrl, regularizer_error, regularizer_P
         )
         # print(train_aux_meta)
-        # if i%save_freq == 0:
-        #     output_path = os.path.join(output_dir, f'step_meta_epoch{i}.pkl')
-        #     with open(output_path, 'wb') as file:
-        #         pickle.dump(train_aux_meta, file)
 
         new_meta_params = get_params(opt_meta)
 

@@ -22,7 +22,7 @@ def prior(q, dq, g_acc=g_acc):
     # sinϕ, cosϕ = jnp.sin(q[2]), jnp.cos(q[2])
     H = m*jnp.eye(nq)
     C = jnp.zeros((nq, nq))
-    g = m*jnp.array([0., 0., -g_acc])
+    g = m*jnp.array([0., 0., g_acc])
     # R = jnp.array([
     #     [cosϕ, -sinϕ, 0],
     #     [sinϕ,  cosϕ, 0],

@@ -341,7 +341,7 @@ if __name__ == "__main__":
         R = R_flatten.reshape((3,3))
 
         f_d = jnp.linalg.norm(u_d)
-        b_3d = -u_d / jnp.linalg.norm(u_d)
+        b_3d = u_d / jnp.linalg.norm(u_d)
         b_1d = jnp.array([1, 0, 0])
         cross = jnp.cross(b_3d, b_1d)
         b_2d = cross / jnp.linalg.norm(cross)
@@ -364,7 +364,7 @@ if __name__ == "__main__":
         dR_flatten = dR.flatten()
 
         e_3 = jnp.array([0, 0, 1])
-        u = -f_d*R@e_3
+        u = f_d*R@e_3
 
         # Apply control to "true" dynamics
         f_ext = x

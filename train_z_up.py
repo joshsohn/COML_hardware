@@ -289,8 +289,8 @@ if __name__ == "__main__":
     # META-TRAINING ##########################################################
     # k_R = jnp.array([1400.0, 1400.0, 1260.0])/1000.0
     # k_R = jnp.array([5.0, 5.0, 4.0])
-    # k_R = jnp.array([4.250, 4.250, 0.300])*2
-    k_R = jnp.array([1.4, 1.4, 1.26])*4
+    k_R = jnp.array([4.250, 4.250, 0.300])*2
+    # k_R = jnp.array([1.4, 1.4, 1.26])*4
     # k_Omega = jnp.array([330.0, 330.0, 300.0])/1000.0
     k_Omega = jnp.array([0.330, 0.330, 0.300])
     J = jnp.diag(jnp.array([0.03, 0.03, 0.09]))
@@ -517,8 +517,7 @@ if __name__ == "__main__":
         num_models = c.shape[1]
         normalizer = T * num_refs * num_models
         tracking_loss, control_loss, estimation_loss = c_final
-        reg_P_penalty = jnp.linalg.norm(meta_params['gains']['P'])**2
-        # reg_P_penalty = jnp.linalg.norm(P)**2
+        reg_P_penalty = jnp.linalg.norm(params_to_posdef(meta_params['gains']['P']))**2
         l2_penalty = tree_normsq((meta_params['W'], meta_params['b']))
         # regularization on P Frobenius norm shouldn't be normalized
         loss = (tracking_loss

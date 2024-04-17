@@ -1,6 +1,6 @@
-train_results/diagnose*/*.pkl
+old/train_results/diagnose*/*.pkl
+old/train_results/pnorm_*/*.pkl
 train_results/hardware_*/*.pkl
-train_results/pnorm_*/*.pkl
 
 !train_results/hardware_15/*.pkl
 !train_results/hardware_16/*.pkl

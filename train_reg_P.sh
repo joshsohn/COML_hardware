@@ -8,10 +8,10 @@ do
         do
             for p_freq in 2000
             do
-                for reg_P in 10 1 100
+                for reg_P in 1
                 do
-                    echo "seed = $seed, M = $M, pnorm_init = $p, p_freq = $p_freq, meta_epochs = 1000, reg_P = $reg_P output_dir = z_up_reg_P_$reg_P"
-                    python3 train_z_up.py $seed $M --pnorm_init $p --p_freq $p_freq --meta_epochs 1000 --reg_P $reg_P --output_dir "z_up_reg_P_$reg_P"
+                    echo "seed = $seed, M = $M, pnorm_init = $p, p_freq = $p_freq, meta_epochs = 1000, reg_P = $reg_P output_dir = z_up_reg_P_${reg_P}_kRz"
+                    python3 train_z_up.py $seed $M --pnorm_init $p --p_freq $p_freq --meta_epochs 1000 --reg_P $reg_P --output_dir "z_up_reg_P_${reg_P}_kRz"
                 done
             done
         done

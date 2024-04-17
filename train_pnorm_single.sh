@@ -8,4 +8,4 @@ source /etc/profile
 # Load modules
 module load anaconda/2023a
 
-python train_Lp_varfreq.py "$@"
+python train_z_up.py "$@"

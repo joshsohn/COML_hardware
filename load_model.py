@@ -1,6 +1,5 @@
 import os
 import pickle
-import jax
 import jax.numpy as jnp
 import numpy as np
 from dynamics import prior
@@ -25,6 +24,7 @@ if __name__ == "__main__":
     test_params['b'] = train_results['model']['b']
     test_params['Λ'] = params_to_posdef(train_results['controller']['Λ'])
     test_params['K'] = params_to_posdef(train_results['controller']['K'])
+    test_params['P'] = params_to_posdef(train_results['controller']['P'])
 
     def adaptation_law(q, dq, R_flatten, Omega, r, dr, params=test_params):
         # Regressor features

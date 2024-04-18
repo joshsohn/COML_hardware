@@ -457,10 +457,12 @@ if __name__ == "__main__":
                                         ((num_dof*(num_dof + 1)) // 2,)),
             'P': 0.1*jax.random.normal(subkeys_gains[2],
                                         ((hdim*(hdim + 1)) // 2,)),
-            'k_R': 1.0*jax.random.normal(subkeys_gains[3],
-                                        (3,)),
-            'k_Omega': 0.1*jax.random.normal(subkeys_gains[4],
-                                        (3,))
+            # 'k_R': 1.0*jax.random.normal(subkeys_gains[3],
+            #                             (3,)),
+            'k_R': jnp.array([1.4, 1.4, 1.26]),
+            # 'k_Omega': 0.1*jax.random.normal(subkeys_gains[4],
+            #                             (3,))
+            'k_Omega': jnp.array([0.330, 0.330, 0.300]),
             # 'P': 0.1*jax.random.normal(subkeys_gains[2],
                                     #    ((num_dof*(num_dof + 1)) // 2,)),
         },

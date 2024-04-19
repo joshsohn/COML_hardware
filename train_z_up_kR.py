@@ -312,11 +312,11 @@ if __name__ == "__main__":
         for W, b in zip(meta_params['W'], meta_params['b']):
             y = jnp.tanh(W@y + b)
 
-        # Parameterized control and adaptation gains
-        gains = jax.tree_util.tree_map(
-            lambda x: params_to_posdef(x),
-            meta_params['gains']
-        )
+        # # Parameterized control and adaptation gains
+        # gains = jax.tree_util.tree_map(
+        #     lambda x: params_to_posdef(x),
+        #     meta_params['gains']
+        # )
 
         vectorized_keys = {'Λ', 'K', 'P'}
         gains = {
@@ -544,12 +544,14 @@ if __name__ == "__main__":
 
         aux = {
             # for each model in ensemble
+            'loss': loss,
             'tracking_loss':   jnp.sum(c[:, :, -1, 0], axis=0) / num_refs,
             'control_loss':    jnp.sum(c[:, :, -1, 1], axis=0) / num_refs,
             'estimation_loss': jnp.sum(c[:, :, -1, 2], axis=0) / num_refs,
             'l2_penalty':      l2_penalty,
             'reg_P_penalty': reg_P_penalty,
             'reg_k_R_penalty': reg_k_R_penalty,
+            'normalizer': normalizer,
             'eigs_Λ':
                 jnp.diag(params_to_cholesky(meta_params['gains']['Λ']))**2,
             'eigs_K':
@@ -636,7 +638,7 @@ if __name__ == "__main__":
     _ = step_meta(0, opt_meta, pnorm_param, train_ensemble, train_t_knots, train_coefs, T, dt, regularizer_l2, regularizer_ctrl, regularizer_error, regularizer_P, regularizer_k_R)
     _ = step_pnorm(0, meta_params, opt_pnorm, train_ensemble, train_t_knots, train_coefs, T, dt, regularizer_l2, regularizer_ctrl, regularizer_error, regularizer_P, regularizer_k_R)
     _ = loss(meta_params, pnorm_param, valid_ensemble, valid_t_knots, valid_coefs, T, dt,
-             0., 0., 0., 0.)
+             0., 0., 0., 0., 0.)
     end = time.time()
     print('done ({:.2f} s)! Now training ...'.format(
           end - start))
@@ -659,10 +661,16 @@ if __name__ == "__main__":
             step_meta_idx, opt_meta, pnorm_param, train_ensemble, train_t_knots, train_coefs,
             T, dt, regularizer_l2, regularizer_ctrl, regularizer_error, regularizer_P, regularizer_k_R
         )
-        # print(train_aux_meta)
-        print('reg_k_R_penalty: ', train_aux_meta['reg_k_R_penalty'])
-        print('k_R:', train_aux_meta['gains']['k_R'])
-        print('k_R:', train_aux_meta['gains']['k_Omega'])
+
+        # print('loss: ', train_aux_meta['loss'])
+        # print('tracking_loss: ', train_aux_meta['tracking_loss']/train_aux_meta['normalizer'])
+        # print('control_loss_norm: ', regularizer_ctrl*train_aux_meta['control_loss']/train_aux_meta['normalizer'])
+        # print('l2_penalty_norm: ', regularizer_l2*train_aux_meta['l2_penalty']/train_aux_meta['normalizer'])
+        # print('reg_P_penalty_norm: ', regularizer_P*train_aux_meta['reg_P_penalty'])
+        # print('reg_k_R_penalty_norm: ', regularizer_k_R*train_aux_meta['reg_k_R_penalty'])
+        # print('\n')
+        # print('k_R:', train_aux_meta['k_R'])
+        # print('k_Omega:', train_aux_meta['k_Omega'])
 
         # if i%save_freq == 0:
         #     output_path = os.path.join(output_dir, f'step_meta_epoch{i}.pkl')
@@ -691,7 +699,7 @@ if __name__ == "__main__":
             
         valid_loss, valid_aux = loss(
             new_meta_params, new_pnorm_param, valid_ensemble, valid_t_knots, valid_coefs,
-            T, dt, 0., 0., 0., 0.
+            T, dt, 0., 0., 0., 0., 0.
         )
         train_loss, train_aux = loss(
             new_meta_params, new_pnorm_param, train_ensemble, train_t_knots, train_coefs,

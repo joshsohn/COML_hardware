@@ -11,10 +11,13 @@ do
         do
             for p_freq in 2000
             do
-                for reg_P in 1e-3 5e-4 1e-4 5e-5
-                do
-                    echo "seed = $seed, M = $M, pnorm_init = $p, p_freq = $p_freq, meta_epochs = 1000, reg_P = $reg_P output_dir = reg_P_${reg_P}_constant_Kr"
-                    sbatch train_z_up_single.sh $seed $M --pnorm_init $p --p_freq $p_freq --meta_epochs 1000 --reg_P $reg_P --output_dir "reg_P_${reg_P}_constant_Kr"
+                for reg_P in 1
+                    do
+                    for k_R_scale in 3
+                    do
+                        echo "seed = $seed, M = $M, pnorm_init = $p, p_freq = $p_freq, meta_epochs = 1000, reg_P = $reg_P k_R_scale=$k_R_scale output_dir = reg_P_${reg_P}_Kr_scale_${k_R_scale}"
+                        sbatch train_z_up_single.sh $seed $M --pnorm_init $p --p_freq $p_freq --meta_epochs 1000 --reg_P $reg_P --k_R_scale $k_R_scale --output_dir "reg_P_${reg_P}_Kr_scale_${k_R_scale}"
+                    done
                 done
             done
         done

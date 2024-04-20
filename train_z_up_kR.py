@@ -531,7 +531,7 @@ if __name__ == "__main__":
         normalizer = T * num_refs * num_models
         tracking_loss, control_loss, estimation_loss = c_final
         reg_P_penalty = jnp.linalg.norm(meta_params['gains']['P'])**2
-        reg_P_penalty = jnp.linalg.norm(params_to_posdef(meta_params['gains']['P']))**2
+        # reg_P_penalty = jnp.linalg.norm(params_to_posdef(meta_params['gains']['P']))**2
         reg_k_R_penalty = jnp.linalg.norm(meta_params['gains']['k_R'])**2
         l2_penalty = tree_normsq((meta_params['W'], meta_params['b']))
         # regularization on P Frobenius norm shouldn't be normalized

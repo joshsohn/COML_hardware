@@ -33,6 +33,7 @@ parser.add_argument('--p_freq', help='set frequency for p-norm parameter update'
 parser.add_argument('--meta_epochs', help='set number of epochs for meta-training', type=int)
 parser.add_argument('--reg_P', help='set regularization for P matrix', type=float)
 parser.add_argument('--reg_k_R', help='set regularization for k_R', type=float)
+parser.add_argument('--k_R_scale', help='scale initial k_R', type=float, default=1)
 parser.add_argument('--output_dir', help='set output directory', type=str)
 parser.add_argument('--hdim', help='number of hidden units per layer', type=int, default=32)
 args = parser.parse_args()
@@ -75,7 +76,7 @@ hparams = {
         'batch_frac':     0.25,  # fraction of training data per batch
         'regularizer_l2': 1e-4,  # coefficient for L2-regularization
         'learning_rate':  1e-2,  # step size for gradient optimization
-        'num_epochs':     1000,  # number of epochs
+        'num_epochs':     1,  # number of epochs
     },
     # For meta-training
     'meta': {
@@ -461,7 +462,7 @@ if __name__ == "__main__":
                                         ((hdim*(hdim + 1)) // 2,)),
             # 'k_R': 1.0*jax.random.normal(subkeys_gains[3],
             #                             (3,)),
-            'k_R': jnp.array([1.4, 1.4, 1.26]),
+            'k_R': jnp.array([1.4, 1.4, 1.26])*args.k_R_scale,
             # 'k_Omega': 0.1*jax.random.normal(subkeys_gains[4],
             #                             (3,))
             'k_Omega': jnp.array([0.330, 0.330, 0.300]),

@@ -12,8 +12,11 @@ do
                     do
                     for reg_k_R in 2e-3
                     do
-                        echo "seed = $seed, M = $M, pnorm_init = $p, p_freq = $p_freq, meta_epochs = 1000, reg_P = $reg_P reg_k_R=$reg_k_R output_dir = reg_P_${reg_P}_Kr_scale_${reg_k_R}"
-                        python3 train_z_up_kR.py $seed $M --pnorm_init $p --p_freq $p_freq --meta_epochs 1000 --reg_P $reg_P --reg_k_R $reg_k_R --output_dir "reg_P_${reg_P}_Kr_scale_${reg_k_R}"
+                        for k_R_scale in 2
+                        do
+                            echo "seed = $seed, M = $M, pnorm_init = $p, p_freq = $p_freq, meta_epochs = 1000, reg_P = $reg_P reg_k_R = $reg_k_R k_R_scale = $k_R_scale output_dir = reg_P_${reg_P}_reg_k_R_${reg_k_R}_k_R_scale_${k_R_scale}"
+                            python3 train_z_up_kR.py $seed $M --pnorm_init $p --p_freq $p_freq --meta_epochs 1000 --reg_P $reg_P --reg_k_R $reg_k_R --k_R_scale $k_R_scale --output_dir "reg_P_${reg_P}_reg_k_R_${reg_k_R}_k_R_scale_${k_R_scale}"
+                        done
                     done
                 done
             done

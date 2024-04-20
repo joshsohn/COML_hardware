@@ -76,7 +76,7 @@ hparams = {
         'batch_frac':     0.25,  # fraction of training data per batch
         'regularizer_l2': 1e-4,  # coefficient for L2-regularization
         'learning_rate':  1e-2,  # step size for gradient optimization
-        'num_epochs':     1,  # number of epochs
+        'num_epochs':     1000,  # number of epochs
     },
     # For meta-training
     'meta': {

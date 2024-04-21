@@ -11,7 +11,7 @@ do
         do
             for p_freq in 2000
             do
-                for reg_P in 2e-3
+                for reg_P in 1e-1
                     do
                     for reg_k_R in 0 1e-6 1e-5 1e-4
                     do

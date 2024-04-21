@@ -462,7 +462,7 @@ if __name__ == "__main__":
                                         ((hdim*(hdim + 1)) // 2,)),
             # 'k_R': 1.0*jax.random.normal(subkeys_gains[3],
             #                             (3,)),
-            'k_R': jnp.array([1.4, 1.4, 1.26])*args.k_R_scale,
+            'k_R': jnp.array([1.4, 1.4, 0.7])*args.k_R_scale,
             # 'k_Omega': 0.1*jax.random.normal(subkeys_gains[4],
             #                             (3,))
             'k_Omega': jnp.array([0.330, 0.330, 0.300]),
@@ -531,8 +531,8 @@ if __name__ == "__main__":
         num_models = c.shape[1]
         normalizer = T * num_refs * num_models
         tracking_loss, control_loss, estimation_loss = c_final
-        reg_P_penalty = jnp.linalg.norm(meta_params['gains']['P'])**2
-        # reg_P_penalty = jnp.linalg.norm(params_to_posdef(meta_params['gains']['P']))**2
+        # reg_P_penalty = jnp.linalg.norm(meta_params['gains']['P'])**2
+        reg_P_penalty = jnp.linalg.norm(params_to_posdef(meta_params['gains']['P']))**2
         reg_k_R_penalty = jnp.linalg.norm(meta_params['gains']['k_R'])**2
         l2_penalty = tree_normsq((meta_params['W'], meta_params['b']))
         # regularization on P Frobenius norm shouldn't be normalized
@@ -670,7 +670,7 @@ if __name__ == "__main__":
         # print('reg_P_penalty_norm: ', regularizer_P*train_aux_meta['reg_P_penalty'])
         # print('reg_k_R_penalty_norm: ', regularizer_k_R*train_aux_meta['reg_k_R_penalty'])
         # print('\n')
-        # print('k_R:', train_aux_meta['k_R'])
+        print('k_R:', train_aux_meta['k_R'])
         # print('k_Omega:', train_aux_meta['k_Omega'])
 
         # if i%save_freq == 0:

@@ -34,6 +34,7 @@ parser.add_argument('--meta_epochs', help='set number of epochs for meta-trainin
 parser.add_argument('--reg_P', help='set regularization for P matrix', type=float)
 parser.add_argument('--reg_k_R', help='set regularization for k_R', type=float)
 parser.add_argument('--k_R_scale', help='scale initial k_R', type=float, default=1)
+parser.add_argument('--k_R_z', help='initial z value for k_R', type=float, default=1.26)
 parser.add_argument('--output_dir', help='set output directory', type=str)
 parser.add_argument('--hdim', help='number of hidden units per layer', type=int, default=32)
 args = parser.parse_args()
@@ -462,7 +463,7 @@ if __name__ == "__main__":
                                         ((hdim*(hdim + 1)) // 2,)),
             # 'k_R': 1.0*jax.random.normal(subkeys_gains[3],
             #                             (3,)),
-            'k_R': jnp.array([1.4, 1.4, 0.7])*args.k_R_scale,
+            'k_R': jnp.array([4.25, 4.25, args.k_R_z])*args.k_R_scale,
             # 'k_Omega': 0.1*jax.random.normal(subkeys_gains[4],
             #                             (3,))
             'k_Omega': jnp.array([0.330, 0.330, 0.300]),

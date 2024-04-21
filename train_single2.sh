@@ -8,4 +8,4 @@ source /etc/profile
 # Load modules
 module load anaconda/2023a
 
-python train_z_up_kR.py "$@"
+python train_z_up_kR2.py "$@"

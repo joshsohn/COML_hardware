@@ -16,8 +16,11 @@ do
                         do
                             for k_R_z in 1.26
                             do
-                                echo "seed = $seed, M = $M, pnorm_init = $p, p_freq = $p_freq, meta_epochs = 4000, reg_P = $reg_P reg_k_R = $reg_k_R k_R_scale = $k_R_scale k_R_z = $k_R_z output_dir = reg_P_${reg_P}_reg_k_R_${reg_k_R}_k_R_z_${k_R_z}_epochs_4000"
-                                python3 train_z_up_kR1.py $seed $M --pnorm_init $p --p_freq $p_freq --meta_epochs 4000 --reg_P $reg_P --reg_k_R $reg_k_R --k_R_scale $k_R_scale --k_R_z $k_R_z --output_dir "reg_P_${reg_P}_reg_k_R_${reg_k_R}_k_R_z_${k_R_z}_epochs_4000"
+                                for depth in 3
+                                do
+                                    echo "seed = $seed, M = $M, pnorm_init = $p, p_freq = $p_freq, meta_epochs = 1000, reg_P = $reg_P reg_k_R = $reg_k_R k_R_scale = $k_R_scale k_R_z = $k_R_z depth = $depth output_dir = reg_P_${reg_P}_reg_k_R_${reg_k_R}_k_R_z_${k_R_z}_depth_${depth}"
+                                    python3 train_z_up_kR1.py $seed $M --pnorm_init $p --p_freq $p_freq --meta_epochs 1000 --reg_P $reg_P --reg_k_R $reg_k_R --k_R_scale $k_R_scale --k_R_z $k_R_z --depth $depth --output_dir "reg_P_${reg_P}_reg_k_R_${reg_k_R}_k_R_z_${k_R_z}_depth_{$depth}"
+                                done
                             done
                         done
                     done

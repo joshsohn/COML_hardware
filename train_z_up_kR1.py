@@ -36,6 +36,7 @@ parser.add_argument('--reg_k_R', help='set regularization for k_R', type=float)
 parser.add_argument('--k_R_scale', help='scale initial k_R', type=float, default=1)
 parser.add_argument('--k_R_z', help='initial z value for k_R', type=float, default=1.26)
 parser.add_argument('--output_dir', help='set output directory', type=str)
+parser.add_argument('--depth', help='number of hidden layers', type=int, default=2)
 parser.add_argument('--hdim', help='number of hidden units per layer', type=int, default=32)
 args = parser.parse_args()
 
@@ -71,7 +72,7 @@ hparams = {
 
     # For training the model ensemble
     'ensemble': {
-        'num_hlayers':    2,     # number of hidden layers in each model
+        'num_hlayers':    args.depth,     # number of hidden layers in each model
         'hdim':           args.hdim,    # number of hidden units per layer
         'train_frac':     0.75,  # fraction of each trajectory for training
         'batch_frac':     0.25,  # fraction of training data per batch
@@ -81,7 +82,7 @@ hparams = {
     },
     # For meta-training
     'meta': {
-        'num_hlayers':       2,          # number of hidden layers
+        'num_hlayers':       args.depth,          # number of hidden layers
         'hdim':              args.hdim,         # number of hidden units per layer
         'train_frac':        0.75,       #
         'learning_rate':     1e-2,       # step size for gradient optimization

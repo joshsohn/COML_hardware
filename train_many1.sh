@@ -11,11 +11,11 @@ do
         do
             for p_freq in 2000
             do
-                for reg_P in 5e-1 2e-3
+                for reg_P in 2e-3
                     do
                     for reg_k_R in 0
                     do
-                        for k_R_scale in 1.5 2 2.5
+                        for k_R_scale in 1.1 1.15 1.2 1.25 1.3 1.35 1.4
                         do
                             for k_R_z in 1.26
                             do

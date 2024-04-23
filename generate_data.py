@@ -48,6 +48,7 @@ if __name__ == "__main__":
         # Construct spline reference trajectory
         def reference(t):
             x_coefs, y_coefs, ϕ_coefs = coefs
+            print(t, t_knots.shape, x_coefs.shape)
             x = spline(t, t_knots, x_coefs)
             y = spline(t, t_knots, y_coefs)
             ϕ = spline(t, t_knots, ϕ_coefs)

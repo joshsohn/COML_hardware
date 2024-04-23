@@ -11,16 +11,16 @@ do
         do
             for p_freq in 2000
             do
-                for reg_P in 2e-3
+                for reg_P in 1e-2 1e-1
                     do
                     for reg_k_R in 0
                     do
-                        for k_R_scale in 1.1 1.15 1.2 1.25 1.3 1.35 1.4
+                        for k_R_scale in 1 1.1 1.2
                         do
-                            for k_R_z in 1.26
+                            for k_R_z in 1.4
                             do
-                                echo "seed = $seed, M = $M, pnorm_init = $p, p_freq = $p_freq, meta_epochs = 1000, reg_P = $reg_P reg_k_R = $reg_k_R k_R_scale = $k_R_scale k_R_z = $k_R_z output_dir = reg_P_${reg_P}_reg_k_R_${reg_k_R}_k_R_scale_${k_R_scale}"
-                                sbatch train_single.sh $seed $M --pnorm_init $p --p_freq $p_freq --meta_epochs 1000 --reg_P $reg_P --reg_k_R $reg_k_R --k_R_scale $k_R_scale --k_R_z $k_R_z --output_dir "reg_P_${reg_P}_reg_k_R_${reg_k_R}_k_R_scale_${k_R_scale}"
+                                echo "seed = $seed, M = $M, pnorm_init = $p, p_freq = $p_freq, meta_epochs = 1000, reg_P = $reg_P reg_k_R = $reg_k_R k_R_scale = $k_R_scale k_R_z = $k_R_z output_dir = reg_P_${reg_P}_reg_k_R_${reg_k_R}_k_R_scale_${k_R_scale}_k_R_z_${k_R_z}"
+                                sbatch train_single.sh $seed $M --pnorm_init $p --p_freq $p_freq --meta_epochs 1000 --reg_P $reg_P --reg_k_R $reg_k_R --k_R_scale $k_R_scale --k_R_z $k_R_z --output_dir "reg_P_${reg_P}_reg_k_R_${reg_k_R}_k_R_scale_${k_R_scale}_k_R_z_${k_R_z}"
                             done
                         done
                     done

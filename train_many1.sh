@@ -15,7 +15,7 @@ do
                     do
                     for reg_k_R in 0
                     do
-                        for k_R_scale in 1 1.1 1.2
+                        for k_R_scale in 0.57142857 0.64285714 0.71428571
                         do
                             for k_R_z in 1.4
                             do
